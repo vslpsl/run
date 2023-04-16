@@ -11,18 +11,15 @@ import (
 func TestRetry(t *testing.T) {
 	testError := errors.New("test-error")
 	count := 0
-	err := run.Retry(
-		func() error {
-			count++
+	err := run.Retry(func(retrier run.Retrier) error {
+		count++
+		if retrier.Iteration() == 3 {
+			retrier.Stop()
 			return testError
-		},
-		func(iter run.Iterator, err error) (retry bool) {
-			if iter.Iteration() == 3 {
-				return false
-			}
-			iter.SetDelay(time.Second * 3)
-			return true
-		})
+		}
+		retrier.SetDelay(time.Second)
+		return testError
+	})
 
 	require.ErrorIs(t, err, testError)
 	require.Equal(t, count, 3)

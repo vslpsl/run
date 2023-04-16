@@ -2,48 +2,51 @@ package run
 
 import "time"
 
-type (
-	RetryFunc     func() error
-	TestErrorFunc func(iter Iterator, err error) (retry bool)
-)
-
-type Iterator interface {
+type Retrier interface {
 	Iteration() int
 	SetDelay(duration time.Duration)
+	Stop()
 }
 
-type iterator struct {
+type retrier struct {
 	iteration int
 	delay     *time.Duration
+	stopped   bool
 }
 
-func (i *iterator) Iteration() int {
-	return i.iteration
+// Iteration returns number of passed iterations.
+func (r *retrier) Iteration() int {
+	return r.iteration
 }
 
-func (i *iterator) SetDelay(duration time.Duration) {
-	i.delay = &duration
+// SetDelay sets delay for next iteration.
+func (r *retrier) SetDelay(duration time.Duration) {
+	r.delay = &duration
 }
 
-func Retry(fn RetryFunc, testErrorFn TestErrorFunc) error {
-	i := &iterator{}
+// Stop preventing further executions.
+func (r *retrier) Stop() {
+	r.stopped = true
+}
+
+func Retry(fn func(retrier Retrier) error) error {
+	r := &retrier{}
 
 	for {
-		i.iteration++
-		i.delay = nil
+		r.iteration++
+		r.delay = nil
 
-		err := fn()
+		err := fn(r)
 		if err == nil {
 			return nil
 		}
 
-		retry := testErrorFn(i, err)
-		if retry == false {
+		if r.stopped {
 			return err
 		}
 
-		if i.delay != nil {
-			<-time.After(*i.delay)
+		if r.delay != nil {
+			<-time.After(*r.delay)
 		}
 	}
 }
