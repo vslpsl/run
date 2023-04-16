@@ -88,7 +88,7 @@ loop := run.Loop{}
             },
         ),
         run.Interrupt(func(err error) {
-
+            cancel()
         }),
     )
 }
