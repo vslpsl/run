@@ -8,10 +8,9 @@ func Execute(fn func() error) Option {
 	}
 }
 
-func ExecuteWithFailureHandler(executeFn func() error, failureHandler func(err error)) Option {
+func FailureHandler(handler func(err error)) Option {
 	return func(a *actor) {
-		a.execute = executeFn
-		a.failureHandler = failureHandler
+		a.failureHandler = handler
 	}
 }
 

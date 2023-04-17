@@ -28,16 +28,12 @@ group := run.Group{}
 	{
 		ctx, cancel := context.WithCancel(context.Background())
 		group.Add(
-			run.ExecuteWithFailureHandler(
-				func() error {
-					return myCode(ctx, ...)
-				},
-				func(err error) {
-					if errors.Is(err, ctx.Err()) {
-						...
-					}
-				},
-			),
+			run.Execute(func() error {
+				return myCode(ctx, ...)
+			}),
+			run.FailureHandler(func(err error) {
+				handleErr(err)
+            }),
 			run.Interrupt(func(err error) {
 				cancel()
 			}),
@@ -79,14 +75,12 @@ loop := run.Loop{}
 {
     ctx, cancel := context.WithCancel(context.Background())
     loop.Add(
-        run.ExecuteWithFailureHandler(
-            func() error {
-                return yetAnotherRepeatableTask(ctx, ...)
-            },
-            func(err error) {
-                sentry.CaptureException(err)
-            },
-        ),
+        run.Execute(func() error {
+			return yetAnotherRepeatableTask(ctx, ...)
+		}),
+		run.FailureHandler(func(err error) {
+            sentry.CaptureException(err)
+        }),
         run.Interrupt(func(err error) {
             cancel()
         }),
