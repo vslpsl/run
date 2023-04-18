@@ -19,3 +19,9 @@ func Interrupt(fn func(err error)) Option {
 		a.interrupt = fn
 	}
 }
+
+func NoOpInterrupt() Option {
+	return func(a *actor) {
+		a.interrupt = func(err error) {}
+	}
+}
